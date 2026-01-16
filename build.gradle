@@ -1,0 +1,43 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.7.18'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+}
+java {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+group = 'com.plugbit'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // 웹 기능을 위한 필수 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    // 블록체인(이더리움/폴리곤) 연결용 필수 라이브러리
+    implementation 'org.web3j:core:4.8.7'
+    // HTTP 통신 라이브러리 (외부 시세 API 조회용)- 마이데이터 연동
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    // HTML 템플릿 엔진 (타임리프)
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    // JWT 라이브러리
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
+    // runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+}
