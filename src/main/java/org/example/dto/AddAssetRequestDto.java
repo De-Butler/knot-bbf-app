@@ -12,6 +12,7 @@ public class AddAssetRequestDto {
     private String accountNumber;
 
     // 코인용
+    private String network;
     private String symbol;
     private String walletAddress;
 

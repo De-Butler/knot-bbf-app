@@ -11,4 +11,6 @@ public class SignupResquestDto {
     private String username;
     private String password;
     private String nickname;
+
+    private boolean serviceAgreed;
 }

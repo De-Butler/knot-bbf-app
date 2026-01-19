@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 
 
@@ -34,15 +35,23 @@ public class AuthService {
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(resquestDto.getPassword());
 
+
+        if (!resquestDto.isServiceAgreed()) {
+            throw new IllegalArgumentException("필수 약관에 동의해야 합니다.");
+        }
+
         // 유저 객체 생성
         User user = User.builder()
                 .username(resquestDto.getUsername())
                 .password(encodedPassword)
                 .nickname(resquestDto.getNickname())
                 .roles(Collections.singletonList("ROLE_USER"))
+                .serviceAgreeAt(LocalDateTime.now())
                 .build();
         // DB저장
         userRepository.save(user);
+
+
     }
 
     @Transactional(readOnly = true)
@@ -59,4 +68,6 @@ public class AuthService {
 
         return  jwtTokenProvider.createToken(user.getUsername(), user.getRoles());
     }
+
+
 }
