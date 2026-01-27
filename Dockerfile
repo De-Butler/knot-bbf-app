@@ -1,12 +1,20 @@
-# Java 8
-FROM eclipse-temurin:8-jdk-alpine
-
-# 작업 폴더를 생성
+# ---------- build stage ----------
+FROM gradle:7.6-jdk8-alpine AS builder
 WORKDIR /app
 
-# 실행 파일(.jar)을 컨테이너 안으로 복사
-# 주의: build/libs 안에 있는 jar 파일을 가져옴
-COPY build/libs/*.jar app.jar
+# 캐시 효율: 의존성 파일 먼저
+COPY build.gradle settings.gradle gradlew /app/
+COPY gradle /app/gradle
+RUN chmod +x /app/gradlew
 
-# 컨테이너가 시작되면 자바 프로그램을 실행
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# 소스 복사 후 빌드
+COPY . /app
+RUN ./gradlew clean build -x test --no-daemon
+
+# ---------- runtime stage ----------
+FROM eclipse-temurin:8-jre-alpine
+WORKDIR /app
+
+COPY --from=builder /app/build/libs/*.jar /app/app.jar
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
