@@ -1,5 +1,5 @@
 # ---------- build stage ----------
-FROM eclipse-temurin:8-jdk-alpine AS builder
+FROM gradle:7.6-jdk8 AS builder
 WORKDIR /app
 
 # gradlew 실행에 필요한 패키지 (bash 필수인 경우 많음)
