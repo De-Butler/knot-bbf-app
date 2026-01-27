@@ -17,6 +17,9 @@ public class VirtualTokenResponse {
 
     @JsonProperty("asset_count")
     private int assetCount;
+    // 12
+
+
 
     @JsonProperty("total_value_usd")
     private double totalValueUsd;
