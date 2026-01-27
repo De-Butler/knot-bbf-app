@@ -7,43 +7,55 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-deploy:
+  # [첫 번째 박스] 자바 빌드 및 테스트
+  build_test:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. 소스 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Java 8 환경 설정 (Dockerfile과 버전 일치)
       - name: Set up JDK 8
         uses: actions/setup-java@v3
         with:
           java-version: '8'
-          distribution: 'temurin' # Dockerfile의 eclipse-temurin과 동일한 배포판 사용
+          distribution: 'temurin'
           cache: 'gradle'
 
-      # 3. gradlew 실행 권한 부여
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 4. Java 빌드 (Jar 파일 생성 단계)
-      # Dockerfile이 'COPY build/libs/*.jar'를 하려면 이 단계가 필수입니다.
-      # DB(my-mysql)가 없으므로 테스트는 건너뜁니다(-x test).
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
-      # 5. Docker Hub 로그인
-      # Github Settings > Secrets 에 DOCKER_USERNAME, DOCKER_PASSWORD 등록 필수
+      # ★ 핵심: 빌드된 Jar 파일을 다음 박스로 넘겨주기 위해 업로드(보관)
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-jar
+          path: build/libs/*.jar
+          retention-days: 1
+
+  # [두 번째 박스] 도커 빌드 및 배포
+  docker_push:
+    needs: build_test  # <--- 이 줄이 두 박스를 선으로 연결합니다! (첫 번째가 끝나야 실행됨)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ★ 핵심: 아까 보관해둔 Jar 파일을 다시 다운로드
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: built-jar
+          path: build/libs/
+
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 6. Docker 이미지 빌드 및 푸시
-      # 도커파일 위치(context)는 현재 폴더(.)
-      # 태그는 '도커허브ID/레포이름:latest' 형식
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
