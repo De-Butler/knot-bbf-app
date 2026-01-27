@@ -1,5 +1,5 @@
 # ---------- build stage ----------
-FROM gradle:7.6-jdk8-alpine AS builder
+FROM eclipse-temurin:8-jdk AS builder
 WORKDIR /app
 
 # 캐시 효율: 의존성 파일 먼저
