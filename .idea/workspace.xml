@@ -4,38 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="96d145e5-9b4b-44bd-89d8-583b815d7772" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/domain/CryptoAsset.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataBankIrp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataInvestIrp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/repository/MyDataInvestIrpRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/adapter/BlockchainAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/adapter/BlockchainAdapter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/adapter/MyDataMockAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/adapter/MyDataMockAdapter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/controller/MyDataController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/controller/MyDataController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/domain/CryptoWallet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/domain/CryptoWallet.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/MyDataPortfolioDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/MyDataPortfolioDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/blockchain/VirtualPriceDto.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/BankAccountDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/BankAccountDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/BankIrpDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/BankIrpDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/CardDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/CardDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/CardResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/CardResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/InsuDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/InsuDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/InvestAccountDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/InvestAccountDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/InvestIrpDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/InvestIrpDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/MockAssetResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/mock/MockAssetResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataBank.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataBank.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataCard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataCard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataInsurance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataInsurance.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataInvest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataInvest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataInvestProduct.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/entity/MyDataInvestProduct.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/repository/CryptoWalletRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/repository/CryptoWalletRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/service/BlockchainService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/service/BlockchainService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/service/MyDataReadService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/service/MyDataReadService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/service/MyDataSyncService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/service/MyDataSyncService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
-    </list>
+    <list default="true" id="96d145e5-9b4b-44bd-89d8-583b815d7772" name="변경" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
