@@ -2,17 +2,12 @@
 FROM gradle:7.6-jdk8 AS builder
 WORKDIR /app
 
+# 먼저 전체 복사
+COPY . .
 
-
-# 캐시 효율: gradle wrapper/설정 먼저
-COPY gradlew ./
-COPY gradle ./gradle
-COPY build.gradle* settings.gradle* ./
-
+# ✅ 권한은 "전체 복사 이후"에 부여해야 함
 RUN chmod +x ./gradlew
 
-# 소스 복사 후 빌드
-COPY . .
 RUN ./gradlew clean build -x test --no-daemon
 
 # ---------- runtime stage ----------
