@@ -3,7 +3,6 @@ package org.example.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.adapter.MyDataMockAdapter;
-// [변경] 새로 만든 DTO 패키지 Import (패키지명은 본인 프로젝트에 맞게 수정!)
 import org.example.dto.mock.*;
 import org.example.entity.*;
 import org.example.repository.*;
@@ -12,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -20,143 +21,207 @@ public class MyDataSyncService {
 
     private final MyDataMockAdapter adapter;
     private final UserRepository userRepository;
-
     private final MyDataBankRepository bankRepository;
     private final MyDataCardRepository cardRepository;
     private final MyDataInvestRepository investRepository;
     private final MyDataInsuranceRepository insuranceRepository;
+    private final MyDataInvestIrpRepository investIrpRepository;
+    private final BlockchainService blockchainService;
+    private final CryptoWalletRepository cryptoWalletRepository;
 
-    /**
-     * 자산 동기화 메서드
-     * @param username 유저 아이디
-     * @param mockToken 마이데이터 접근 토큰
-     * @param userSearchId [New] 사용자 식별값 (CI) - 표준 규격 필수 헤더
-     */
     @Transactional
-    public void syncAllAssets(String username, String mockToken, String userSearchId) {
-
-        // 1. 유저 객체 조회
+    public void syncAllAssets(String username, String mockToken, String userSearchId, Map<String, String> cryptoAddresses) {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
-
         Long userId = user.getId();
 
-        // 2. 기존 데이터 삭제 (중복 방지)
+        // 1. 기존 데이터 삭제
         bankRepository.deleteByUserId(userId);
         cardRepository.deleteByUserId(userId);
         investRepository.deleteByUserId(userId);
+        investIrpRepository.deleteByUserId(userId);
         insuranceRepository.deleteByUserId(userId);
 
-        log.info(">>> 자산 동기화 시작 (User: {}, CI: {})", username, userSearchId);
 
-        // ==========================================
-        // 3. Bank (은행) - 일반 계좌 + IRP
-        // ==========================================
+        log.info(">>> 자산 동기화 시작: {}", username);
+
+        // 2. Card Sync (이 부분이 핵심입니다)
+        // --- Card Sync Section ---
         try {
-            // 3-1. 일반 수신 계좌
-            BankAcctResponse bankRes = adapter.getBankAccounts(mockToken, userSearchId);
-            if (bankRes != null && bankRes.getAccountList() != null) {
-                for (BankAccountDto dto : bankRes.getAccountList()) {
-                    bankRepository.save(MyDataBank.builder()
-                            .userId(userId)
-                            .bankName("Woori Bank") // 표준 API 리스트엔 은행명이 없으므로(기관코드로 식별) 임의 지정
-                            .accountNum(dto.getAccountNum())
-                            .prodName(dto.getProdName())
-                            .balanceAmt(new BigDecimal(dto.getBalanceAmt())) // String -> BigDecimal
-                            .build());
-                }
-            }
+            CardResponse res = adapter.getCards(mockToken, userSearchId);
 
-            // 3-2. [New] 은행 IRP 계좌 (별도 API)
-            BankIrpResponse irpRes = adapter.getBankIrps(mockToken, userSearchId);
-            if (irpRes != null && irpRes.getIrpList() != null) {
-                for (BankIrpDto dto : irpRes.getIrpList()) {
-                    bankRepository.save(MyDataBank.builder()
-                            .userId(userId)
-                            .bankName("Woori Bank (IRP)")
-                            .accountNum(dto.getAccountNum())
-                            .prodName(dto.getProdName())
-                            .balanceAmt(new BigDecimal(dto.getEvalAmt())) // IRP는 평가금액 사용
-                            .build());
-                }
-            }
-        } catch (Exception e) { log.error("Bank Sync Fail", e); }
+            if (res != null && res.getResultList() != null) {
+                log.info(">>> [CARD DEBUG] Received count: {}", res.getResultList().size());
 
-        // ==========================================
-        // 4. Card (카드)
-        // ==========================================
-        try {
-            CardResponse cardRes = adapter.getCards(mockToken, userSearchId);
-            if (cardRes != null && cardRes.getCardList() != null) {
-                for (CardDto dto : cardRes.getCardList()) {
+                for (CardDto dto : res.getResultList()) {
+                    // [에러 방지] paymentAmt 숫자 변환 안전 처리
+                    String rawAmt = dto.getPaymentAmt();
+                    BigDecimal safeAmt = BigDecimal.ZERO;
+                    try {
+                        if (rawAmt != null && !rawAmt.isEmpty()) {
+                            // 혹시 모를 콤마(,) 제거 후 변환
+                            safeAmt = new BigDecimal(rawAmt.replace(",", ""));
+                        }
+                    } catch (Exception e) {
+                        log.error(">>> [CARD DEBUG] Amount parsing error for value: {}", rawAmt);
+                    }
+
                     cardRepository.save(MyDataCard.builder()
                             .userId(userId)
-                            .cardCompanyName("Hyundai Card") // 임의 지정
+                            .cardId(dto.getCardId())
                             .cardNum(dto.getCardNum())
                             .cardName(dto.getCardName())
-                            .paymentAmt(new BigDecimal(dto.getPaymentAmt())) // 결제 예정 금액
+                            .cardType(dto.getCardType())
+                            .cardMember(dto.getCardMember())
+                            .paymentAmt(safeAmt) // 안전하게 변환된 값 사용
+                            .cardCompanyName(dto.getCardCompanyName() != null ? dto.getCardCompanyName() : "현대카드")
+                            .issueDate(dto.getIssueDate())
+                            .build());
+                }
+                log.info(">>> [CARD DEBUG] Save Success");
+            } else {
+                log.warn(">>> [CARD DEBUG] Response is NULL or List is Empty");
+            }
+        } catch (Exception e) {
+            // [중요] 에러 메시지를 영어로 출력해서 깨짐 방지
+            log.error(">>> [CARD DEBUG] CRITICAL ERROR: {}", e.toString());
+        }
+        // 2. Bank Sync (일반 계좌)
+        try {
+            BankAcctResponse res = adapter.getBankAccounts(mockToken, userSearchId);
+            if (res != null && res.getAccountList() != null) {
+                for (BankAccountDto dto : res.getAccountList()) {
+                    bankRepository.save(MyDataBank.builder()
+                            .userId(userId)
+                            .bankName(dto.getBankName())
+                            .accountNum(dto.getAccountNum())
+                            .prodName(dto.getProdName())
+                            .accountType(dto.getAccountType())
+                            .balanceAmt(new BigDecimal(dto.getBalanceAmt()))
+                            .lastTranDate(dto.getLastTranDate())
                             .build());
                 }
             }
-        } catch (Exception e) { log.error("Card Sync Fail", e); }
+        } catch (Exception e) {
+            log.error("Bank Sync Fail", e);
+        }
 
-        // ==========================================
-        // 5. Invest (증권) - 위탁 계좌 + IRP
-        // ==========================================
+        // [추가] 3. Bank IRP Sync (은행 IRP)
         try {
-            // 5-1. 일반 위탁 계좌
-            InvestAcctResponse investRes = adapter.getInvestAccounts(mockToken, userSearchId);
-            if (investRes != null && investRes.getAccountList() != null) {
-                for (InvestAccountDto dto : investRes.getAccountList()) {
-                    MyDataInvest invest = MyDataInvest.builder()
+            BankIrpResponse res = adapter.getBankIrps(mockToken, userSearchId);
+            if (res != null && res.getIrpList() != null) {
+                for (BankIrpDto dto : res.getIrpList()) {
+                    bankRepository.save(MyDataBank.builder()
                             .userId(userId)
-                            .companyName("Kiwoom Securities")
+                            .bankName(dto.getBankName())
+                            .accountNum(dto.getAccountNum())
+                            .prodName(dto.getProdName()) // 명세서의 "KB 개인형 IRP" 등 저장
+                            .accountType("IRP") // IRP 구분을 위해 명시적으로 지정
+                            .balanceAmt(new BigDecimal(dto.getEvalAmt()))
+                            .lastTranDate(dto.getOpenDate())
+                            .build());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Bank IRP Sync Fail", e);
+        }
+
+
+        // 4. Invest Sync (일반 증권)
+        try {
+            InvestAcctResponse res = adapter.getInvestAccounts(mockToken, userSearchId);
+            if (res != null && res.getAccountList() != null) {
+                for (InvestAccountDto dto : res.getAccountList()) {
+                    investRepository.save(MyDataInvest.builder()
+                            .userId(userId)
+                            .companyName(dto.getCompanyName()) // 키움증권
                             .accountNum(dto.getAccountNum())
                             .prodName(dto.getAccountName())
                             .totalEvalAmt(new BigDecimal(dto.getEvalAmt()))
-                            .build();
-
-                    // 주의: 표준 v2.0 '계좌 목록 조회' API에는 '보유 종목(products)'이 포함되지 않음.
-                    // 종목 정보를 가져오려면 '/accounts/{account_num}/products'를 별도로 호출해야 함.
-                    // 이번 Mock 구현에서는 계좌 총액만 동기화합니다.
-
-                    investRepository.save(invest);
-                }
-            }
-
-            // 5-2. [New] 증권 IRP 계좌
-            InvestIrpResponse irpRes = adapter.getInvestIrps(mockToken, userSearchId);
-            if (irpRes != null && irpRes.getIrpList() != null) {
-                for (InvestIrpDto dto : irpRes.getIrpList()) {
-                    investRepository.save(MyDataInvest.builder()
-                            .userId(userId)
-                            .companyName("Mirae Asset (IRP)")
-                            .accountNum(dto.getAccountNum())
-                            .prodName(dto.getProdName())
-                            .totalEvalAmt(new BigDecimal(dto.getEvalAmt()))
+                            .withdrawableAmt(new BigDecimal(dto.getWithdrawableAmt()))
+                            .issueDate(dto.getIssueDate())
                             .build());
                 }
             }
-        } catch (Exception e) { log.error("Invest Sync Fail", e); }
+        } catch (Exception e) {
+            log.error("Invest Sync Fail", e);
+        }
 
-        // ==========================================
-        // 6. Insurance (보험)
-        // ==========================================
+        // 5. Invest IRP Sync 부분
         try {
-            InsuResponse insuRes = adapter.getInsuContracts(mockToken, userSearchId);
-            if (insuRes != null && insuRes.getInsuList() != null) {
-                for (InsuDto dto : insuRes.getInsuList()) {
+            InvestIrpResponse res = adapter.getInvestIrps(mockToken, userSearchId);
+            if (res != null && res.getIrpList() != null) {
+                for (InvestIrpDto dto : res.getIrpList()) {
+                    investIrpRepository.save(MyDataInvestIrp.builder()
+                            .userId(userId)
+                            .companyName(dto.getCompanyName()) // 이제 명시적으로 호출 가능!
+                            .accountNum(dto.getAccountNum())
+                            .isConsent(dto.isConsent())
+                            .prodName(dto.getProdName())
+                            .irpType(dto.getIrpType())
+                            .evalAmt(new BigDecimal(dto.getEvalAmt()))
+                            .invPrincipal(new BigDecimal(dto.getInvPrincipal()))
+                            .openDate(dto.getOpenDate())
+                            .expDate(dto.getExpDate())
+                            .currencyCode(dto.getCurrencyCode())
+                            .build());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Invest IRP Sync Fail: {}", e.getMessage());
+        }
+
+
+        // 5. Insurance Sync
+        try {
+            InsuResponse res = adapter.getInsuContracts(mockToken, userSearchId);
+            if (res != null && res.getInsuList() != null) {
+                for (InsuDto dto : res.getInsuList()) {
                     insuranceRepository.save(MyDataInsurance.builder()
                             .userId(userId)
-                            .companyName("Samsung Fire")
+                            .companyName(dto.getCompanyName())
                             .prodName(dto.getProdName())
-                            .insuType(dto.getInsuType())
-                            .paidAmt(new BigDecimal(dto.getFaceAmt())) // 가입금액(보장금액)을 매핑 (실제 납입료 필드는 별도)
+                            .insuStatus(dto.getInsuStatus())
+                            .paidAmt(new BigDecimal(dto.getFaceAmt()))
+                            .expDate(dto.getExpDate())
+                            .insuNum(dto.getInsuNum())
                             .build());
                 }
             }
-        } catch (Exception e) { log.error("Insu Sync Fail", e); }
+        } catch (Exception e) {
+            log.error("Insu Sync Fail", e);
+        }
 
-        log.info(">>> 동기화 완료!");
+
+        // 6. 가상자산 (Crypto) Sync - Repository 메서드에 최적화
+        if (cryptoAddresses != null && !cryptoAddresses.isEmpty()) {
+            log.info(">>> [CRYPTO DEBUG] 가상자산 멀티체인 동기화 시작");
+
+            cryptoAddresses.forEach((chainCode, address) -> {
+                if (address != null && !address.isEmpty()) {
+                    try {
+                        log.info(">>> [CRYPTO] 체인: {}, 주소: {} 동기화 시작 (기존 데이터 초기화)", chainCode, address);
+
+                        // 1. [핵심] Repository에 정의된 메서드로 해당 주소 데이터만 삭제
+                        // 이렇게 하면 다른 지갑 주소 데이터는 건드리지 않고, 현재 동기화하려는 주소만 깔끔하게 비웁니다.
+                        cryptoWalletRepository.deleteByAddressAndUser(address, user);
+
+                        // 2. 삭제 직후 즉시 반영 (혹시 모를 중복 에러 방지용)
+                        cryptoWalletRepository.flush();
+
+                        // 3. 무조건 새로고침 호출 (이미 지웠으므로 exists 체크 없이 바로 진행)
+                        blockchainService.refreshWallet(
+                                user,
+                                address,
+                                Collections.singletonList(chainCode.toLowerCase())
+                        );
+                        log.info(">>> [CRYPTO] {} 주소 동기화 완료", address);
+
+                    } catch (Exception e) {
+                        log.error(">>> [CRYPTO] {} 동기화 실패: {}", chainCode, e.getMessage());
+                    }
+                }
+            });
+        }
     }
 }

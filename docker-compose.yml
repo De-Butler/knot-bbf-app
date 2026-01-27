@@ -1,32 +1,51 @@
+version: '3.8'
+
 services:
-  # 스프링 부트 앱
+  # 1. Mock API (미리 빌드된 이미지를 사용)
+  blockchain-api:
+    container_name: mock-bank-api
+    image: my-mock-api:latest  # 폴더 경로 대신 이미지를 호출
+    ports:
+      - "8081:8081"
+    networks:
+      - knot_main_net
+
+  # 2. 메인 WAS
   sdk-app:
     container_name: sdk-app
-    build: .
-    image: sdk-app
+    image: my-was-app:latest   # 우리 WAS도 이미지로 관리
+    build: .                   # 로컬에서 수정 중일 때만 빌드 옵션 유지
     ports:
       - "8080:8080"
     environment:
-
       SPRING_DATASOURCE_URL: "jdbc:mysql://my-mysql:3306/knot_service?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true"
-      SPRING_DATASOURCE_USERNAME: "root"
-      SPRING_DATASOURCE_PASSWORD: "root"
+      # 내부 통신은 컨테이너 이름으로 고정 (배포 환경에서도 동일)
+      BLOCKCHAIN_API_DOMAIN: "http://host.docker.internal:19000"
+      MYDATA_MOCK_DOMAIN: "http://mock-bank-api:8081"
     depends_on:
       - mysql-db
+      - blockchain-api
+    networks:
+      - knot_main_net
 
-  # 도커용 MySQL
+  # 3. 데이터베이스
   mysql-db:
     image: mysql:8.0
     container_name: my-mysql
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: knot_service # (기왕이면 여기도 메인 DB 이름으로 변경)
+      MYSQL_DATABASE: knot_service
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: dev_user
-      MYSQL_PASSWORD: dev_password
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - knot_main_net
 
 volumes:
   db_data:
+
+networks:
+  knot_main_net:
+    external: true
+    name: knot-api-blockchain-main_default

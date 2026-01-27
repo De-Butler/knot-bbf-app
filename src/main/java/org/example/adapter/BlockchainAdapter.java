@@ -21,10 +21,15 @@ import java.util.UUID;
 public class BlockchainAdapter {
 
     private final RestTemplate restTemplate;
+    @Value("${blockchain.api.domain}")
+    private String domain;
 
-    // application.properties에서 값 가져오기
-    @Value("${blockchain.api.base-url}")
-    private String baseUrl;
+    @Value("${blockchain.api.version}")
+    private String version;
+
+    // 경로 정보 프로퍼티
+    @Value("${blockchain.api.tokens}")
+    private String tokensPath;
 
     @Value("${blockchain.api.key}")
     private String apiKey;
@@ -37,8 +42,9 @@ public class BlockchainAdapter {
      * @return 조회된 코인/토큰 정보
      */
     public VirtualTokenResponse getPortfolio(String address, List<String> chains) {
+
         // 1. 요청 URL 만들기 (http://localhost:8080/v1/virtual + /tokens)
-        String url = baseUrl + "/tokens";
+        String url = domain + version + tokensPath;
 
         // 2. 헤더(Header) 설정 (명세서 필수 요건!)
         HttpHeaders headers = new HttpHeaders();

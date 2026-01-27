@@ -26,9 +26,30 @@ import java.util.concurrent.ThreadLocalRandom;
 public class MyDataMockAdapter {
 
     private final RestTemplate restTemplate;
+    @Value("${mydata.mock.domain}")
+    private String domain;
 
-    @Value("${mydata.mock.base-url}") // 예: http://localhost:8081/v1
-    private String mockBaseUrl;
+    @Value("${mydata.mock.version}")
+    private String version;
+
+    // 키값에 맞춘 경로 변수들
+    @Value("${mydata.mock.api.bank-accounts}")
+    private String bankAccountsPath;
+
+    @Value("${mydata.mock.api.bank-irps}")
+    private String bankIrpsPath;
+
+    @Value("${mydata.mock.api.card-cards}")
+    private String cardPath;
+
+    @Value("${mydata.mock.api.invest-accounts}")
+    private String investAccountsPath;
+
+    @Value("${mydata.mock.api.invest-irps}")
+    private String investIrpsPath;
+
+    @Value("${mydata.mock.api.insu-contracts}")
+    private String insuPath;
 
     /**
      * [공통 헤더 생성]
@@ -63,7 +84,7 @@ public class MyDataMockAdapter {
     public BankAcctResponse getBankAccounts(String token, String userSearchId) {
         log.info(">>>> [Adapter 호출] token={}, userSearchId={}", token, userSearchId);
 
-        String url = mockBaseUrl + "/bank/accounts";
+        String url = domain + version + bankAccountsPath;
 
         return restTemplate.exchange(
                 url,
@@ -75,7 +96,7 @@ public class MyDataMockAdapter {
 
     // 1-2. [New] 개인형 IRP 계좌 목록 조회
     public BankIrpResponse getBankIrps(String token, String userSearchId) {
-        String url = mockBaseUrl + "/bank/irps";
+        String url = domain + version + bankIrpsPath;
 
         return restTemplate.exchange(
                 url,
@@ -89,7 +110,7 @@ public class MyDataMockAdapter {
     // 2. Card (카드)
     // =================================================================
     public CardResponse getCards(String token, String userSearchId) {
-        String url = mockBaseUrl + "/card/cards";
+        String url = domain + version + cardPath;
 
         return restTemplate.exchange(
                 url,
@@ -105,7 +126,7 @@ public class MyDataMockAdapter {
 
     // 3-1. 계좌 목록 조회
     public InvestAcctResponse getInvestAccounts(String token, String userSearchId) {
-        String url = mockBaseUrl + "/invest/accounts";
+        String url = domain + version + investAccountsPath;
 
         return restTemplate.exchange(
                 url,
@@ -115,9 +136,9 @@ public class MyDataMockAdapter {
         ).getBody();
     }
 
-    // 3-2. [New] 개인형 IRP 계좌 목록 조회
+    // 3-2. [투자] 개인형 IRP 계좌 목록 조회
     public InvestIrpResponse getInvestIrps(String token, String userSearchId) {
-        String url = mockBaseUrl + "/invest/irps";
+        String url = domain + version + investIrpsPath;
 
         return restTemplate.exchange(
                 url,
@@ -131,7 +152,7 @@ public class MyDataMockAdapter {
     // 4. Insurance (보험)
     // =================================================================
     public InsuResponse getInsuContracts(String token, String userSearchId) {
-        String url = mockBaseUrl + "/insu/contracts";
+        String url = domain + version + insuPath;
 
         return restTemplate.exchange(
                 url,

@@ -24,16 +24,17 @@ public class MyDataController {
     @PostMapping("/connect")
     public ResponseEntity<String> connectMyData(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody Map<String, String> body
+            @RequestBody Map<String, Object> body // String 대신 Object로 받기
     ) {
         String username = userDetails.getUsername();
+        String mockToken = (String) body.get("mock_token");
+        String userSearchId = (String) body.get("user_search_id");
 
-        // [수정] Request Body에서 토큰과 CI값 추출
-        String mockToken = body.get("mock_token");
-        String userSearchId = body.get("user_search_id"); // 표준 API 필수 헤더값
+        // [핵심 수정] 명시적으로 Map 타입으로 캐스팅하여 서비스에 전달
+        @SuppressWarnings("unchecked")
+        Map<String, String> cryptoAddresses = (Map<String, String>) body.get("crypto_addresses");
 
-        // [수정] 서비스 메서드 호출 (파라미터 3개)
-        myDataSyncService.syncAllAssets(username, mockToken, userSearchId);
+        myDataSyncService.syncAllAssets(username, mockToken, userSearchId, cryptoAddresses);
 
         return ResponseEntity.ok("연동 및 데이터 저장이 완료되었습니다.");
     }

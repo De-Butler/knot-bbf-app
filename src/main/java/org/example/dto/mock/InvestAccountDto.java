@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor // 👈 [필수 1] 깡통 객체를 만들 수 있게 함
 @AllArgsConstructor
 public class InvestAccountDto {
+    @JsonProperty("company_name")
+    private String companyName;
     @JsonProperty("account_num") private String accountNum;
     @JsonProperty("is_consent") private boolean isConsent;
     @JsonProperty("account_name") private String accountName;

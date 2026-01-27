@@ -3,43 +3,46 @@ package org.example.domain;
 import lombok.*;
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "mydata_crypto") // DB 테이블 이름 지정
+@Table(name = "wallets", catalog = "mock_crypto")
 public class CryptoWallet {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 1. 블록체인 네트워크 (API의 'chains' 정보)
-    // 예: eth, btc, sol, xrp
+    // API 명세: address
     @Column(nullable = false)
-    private String chain;
+    private String address;
 
-    // 2. 지갑 주소
-    @Column(nullable = false)
-    private String walletAddress;
+    // API 명세: asset_count
+    private Integer assetCount;
 
-    // 3. 코인 심볼 (예: ETH, BTC, USDT)
-    @Column(nullable = false)
-    private String symbol;
-
-    // 4. 보유 수량 (API의 'balance')
-    // 코인은 소수점이 매우 길 수 있어서 BigDecimal 사용 필수!
-    // (precision=30, scale=10 -> 전체 30자리 중 소수점 10자리까지 허용)
-    @Column(precision = 30, scale = 10)
-    private BigDecimal balance;
-
-    // 5. 원화 평가 금액 (API의 'value_krw' 또는 'total_value_krw')
+    // API 명세: total_value_usd
     @Column(precision = 20, scale = 2)
-    private BigDecimal valueKrw;
+    private BigDecimal totalValueUsd;
 
-    // 6. 소유자 (User 테이블과 연결)
+    // API 명세: total_value_krw
+    @Column(precision = 20, scale = 2)
+    private BigDecimal totalValueKrw;
+
+    // 캐싱용: 마지막 업데이트 시간 (300초 체크용)
+    private LocalDateTime lastUpdated;
+
+    // User와의 관계 (우리 서비스 내부용)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)) // FK 생성 방지
     private User user;
+
+    // 자산 리스트 (1:N 관계)
+    @Builder.Default
+    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CryptoAsset> assets = new ArrayList<>();
 }
