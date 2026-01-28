@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "wallet_assets", catalog = "mock_crypto")
+@Table(name = "wallet_assets")
 public class CryptoAsset {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
