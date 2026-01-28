@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "wallets", catalog = "mock_crypto")
+@Table(name = "wallets")
 public class CryptoWallet {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
