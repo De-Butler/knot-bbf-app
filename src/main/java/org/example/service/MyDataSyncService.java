@@ -10,7 +10,10 @@ import org.example.domain.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 import java.util.Map;
 
@@ -194,32 +197,38 @@ public class MyDataSyncService {
         }
 
 
-        // 6. 가상자산 (Crypto) Sync - Repository 메서드에 최적화
+        // ---------------------------------------------------------------------
+        // 8. 가상자산 (Crypto) Sync - [여기를 완전히 기초적인 문법으로 변경]
+        // ---------------------------------------------------------------------
         if (cryptoAddresses != null && !cryptoAddresses.isEmpty()) {
-            log.info(">>> [CRYPTO DEBUG] 가상자산 멀티체인 동기화 시작");
+            log.info(">>> [CRYPTO] 가상자산 멀티체인 동기화 시작 (총 {}개)", cryptoAddresses.size());
 
-            cryptoAddresses.forEach((chainCode, address) -> {
+            cryptoAddresses.forEach((key, address) -> {
                 if (address != null && !address.isEmpty()) {
                     try {
-                        log.info(">>> [CRYPTO] 체인: {}, 주소: {} 동기화 시작 (기존 데이터 초기화)", chainCode, address);
+                        log.info(">>> [CRYPTO] 요청 Key: {}, Address: {}", key, address);
 
-                        // 1. [핵심] Repository에 정의된 메서드로 해당 주소 데이터만 삭제
-                        // 이렇게 하면 다른 지갑 주소 데이터는 건드리지 않고, 현재 동기화하려는 주소만 깔끔하게 비웁니다.
+                        // [수정] ArrayList<String>을 명시적으로 선언하고 생성합니다.
+                        List<String> targetChains = new ArrayList<String>();
+
+                        if (key == null || key.equalsIgnoreCase("auto")) {
+                            // auto인 경우 빈 리스트 그대로 둠 -> 전체 스캔
+                            log.info(">>> [CRYPTO] 자동 스캔 모드 진입");
+                        } else {
+                            // 특정 체인인 경우 리스트에 추가
+                            targetChains.add(key.toLowerCase());
+                        }
+
+                        // 기존 데이터 삭제 및 블록체인 서비스 호출
                         cryptoWalletRepository.deleteByAddressAndUser(address, user);
-
-                        // 2. 삭제 직후 즉시 반영 (혹시 모를 중복 에러 방지용)
                         cryptoWalletRepository.flush();
 
-                        // 3. 무조건 새로고침 호출 (이미 지웠으므로 exists 체크 없이 바로 진행)
-                        blockchainService.refreshWallet(
-                                user,
-                                address,
-                                Collections.singletonList(chainCode.toLowerCase())
-                        );
-                        log.info(">>> [CRYPTO] {} 주소 동기화 완료", address);
+                        blockchainService.refreshWallet(user, address, targetChains);
+
+                        log.info(">>> [CRYPTO] {} 동기화 성공", address);
 
                     } catch (Exception e) {
-                        log.error(">>> [CRYPTO] {} 동기화 실패: {}", chainCode, e.getMessage());
+                        log.error(">>> [CRYPTO] {} 동기화 실패: {}", key, e.getMessage());
                     }
                 }
             });
