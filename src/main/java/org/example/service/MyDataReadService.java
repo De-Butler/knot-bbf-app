@@ -119,7 +119,7 @@ public class MyDataReadService {
         List<MyDataPortfolioDto.CryptoDto> cryptoList = new ArrayList<>();
         BigDecimal[] cryptoTotalUsd = {BigDecimal.ZERO};
 
-        // [핵심 수정] Java 8 문법: var 제거 및 List 처리
+
         List<CryptoWallet> wallets = cryptoWalletRepository.findByUser(user);
 
         if (wallets != null && !wallets.isEmpty()) {
