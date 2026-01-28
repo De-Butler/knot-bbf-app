@@ -44,51 +44,9 @@ public class MyDataSyncService {
 
 
         log.info(">>> 자산 동기화 시작: {}", username);
-        // -------------------------------------------------------------------------
-        // 2. [임시] 금융자산 하드데이터 주입 (Mock 서버 대신 WAS가 직접 저장)
-        // -------------------------------------------------------------------------
 
-        // (1) 카드 하드데이터
-        cardRepository.save(MyDataCard.builder()
-                .userId(userId).cardId("card_001").cardNum("2342-****-****-5621")
-                .cardName("현대카드 ZERO").cardType("01").cardMember("01")
-                .paymentAmt(new BigDecimal("450000"))
-                .cardCompanyName("현대카드").issueDate("20230501").build());
 
-        // (2) 은행 일반 계좌
-        bankRepository.save(MyDataBank.builder()
-                .userId(userId).bankName("우리은행").accountNum("1002-123-423123")
-                .prodName("입출금통장").accountType("1001")
-                .balanceAmt(new BigDecimal("1500000")).lastTranDate("20260125").build());
-
-        // (3) 은행 IRP 계좌
-        bankRepository.save(MyDataBank.builder()
-                .userId(userId).bankName("우리은행").accountNum("428-833-7777")
-                .prodName("KB 개인형 IRP").accountType("IRP")
-                .balanceAmt(new BigDecimal("12000000")).lastTranDate("20220101").build());
-
-        // (4) 증권 일반 계좌
-        investRepository.save(MyDataInvest.builder()
-                .userId(userId).companyName("키움증권").accountNum("555-88-231256")
-                .prodName("키움 종합매매").totalEvalAmt(new BigDecimal("15600000"))
-                .withdrawableAmt(new BigDecimal("500000")).issueDate("20240101").build());
-
-        // (5) 증권 IRP 계좌
-        investIrpRepository.save(MyDataInvestIrp.builder()
-                .userId(userId).companyName("키움증권").accountNum("929-17-223112")
-                .prodName("키움 개인형 IRP 계좌").irpType("201").isConsent(true)
-                .evalAmt(new BigDecimal("25000000")).invPrincipal(new BigDecimal("20000000"))
-                .openDate("20200501").expDate("20300501").currencyCode("KRW").build());
-
-        // (6) 보험 계약
-        insuranceRepository.save(MyDataInsurance.builder()
-                .userId(userId).companyName("삼성화재").prodName("삼성화재 실손보험")
-                .insuStatus("01").paidAmt(new BigDecimal("50000000"))
-                .expDate("20801231").insuNum("100-200-30000").build());
-
-        log.info(">>> [TEMP] 금융자산 주입 완료");
-        // 여기부터 실제 WAS 처리:: 위 코드는 임시 코드라 제거예정
-        /*// 2. Card Sync (이 부분이 핵심입니다)
+        // 2. Card Sync (이 부분이 핵심입니다)
         // --- Card Sync Section ---
         try {
             CardResponse res = adapter.getCards(mockToken, userSearchId);
@@ -233,7 +191,7 @@ public class MyDataSyncService {
             }
         } catch (Exception e) {
             log.error("Insu Sync Fail", e);
-        }*/
+        }
 
 
         // 6. 가상자산 (Crypto) Sync - Repository 메서드에 최적화
