@@ -80,4 +80,11 @@ public class BlockchainService {
 
         return response;
     }
+    public VirtualTokenResponse scanWallet(String address, List<String> chains) {
+        // 로그 정도만 남기고 바로 어댑터 호출
+        log.info(">>> [Scan] 지갑 단순 조회 (No Save): {}", address);
+
+        // DB 저장(repository.save) 없이 어댑터 결과만 바로 리턴!
+        return blockchainAdapter.getPortfolio(address, chains);
+    }
 }

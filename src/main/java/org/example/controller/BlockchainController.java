@@ -14,6 +14,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/blockchain")
@@ -54,5 +57,22 @@ public class BlockchainController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/scan")
+    public ResponseEntity<VirtualTokenResponse> scanWallet(
+            @RequestParam String address,
+            @RequestParam(required = false, defaultValue = "auto") String chain
+    ) {
+        // 1. 체인 파라미터가 "auto"면 빈 리스트, 아니면 해당 체인만 담기
+        List<String> chains = new ArrayList<>();
+        if (chain != null && !"auto".equalsIgnoreCase(chain)) {
+            chains.add(chain);
+        }
+
+        // 2. 서비스 호출 (DB 저장 안 함)
+        VirtualTokenResponse result = blockchainService.scanWallet(address, chains);
+
+        return ResponseEntity.ok(result);
     }
 }
