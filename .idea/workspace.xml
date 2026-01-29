@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="96d145e5-9b4b-44bd-89d8-583b815d7772" name="변경" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/controller/BlockchainController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/controller/BlockchainController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/service/BlockchainService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/service/BlockchainService.java" afterDir="false" />
-    </list>
+    <list default="true" id="96d145e5-9b4b-44bd-89d8-583b815d7772" name="변경" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

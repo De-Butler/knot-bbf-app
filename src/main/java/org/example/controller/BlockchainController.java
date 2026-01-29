@@ -6,6 +6,7 @@ import org.example.domain.Consent; // 💡 추가
 import org.example.domain.User;
 import org.example.dto.blockchain.VirtualTokenRequest;
 import org.example.dto.blockchain.VirtualTokenResponse;
+import org.example.dto.blockchain.WalletScanRequest;
 import org.example.repository.ConsentRepository; // 💡 추가
 import org.example.repository.UserRepository;
 import org.example.service.BlockchainService;
@@ -59,12 +60,16 @@ public class BlockchainController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/scan")
+    @PostMapping("/scan")
     public ResponseEntity<VirtualTokenResponse> scanWallet(
-            @RequestParam String address,
-            @RequestParam(required = false, defaultValue = "auto") String chain
+            @RequestBody WalletScanRequest request // 👈 Body로 받음
     ) {
-        // 1. 체인 파라미터가 "auto"면 빈 리스트, 아니면 해당 체인만 담기
+        String address = request.getAddress();
+        String chain = request.getChain();
+
+        // 1. 체인 파라미터 정리
+        // 프론트가 "auto"로 보내면 -> 빈 리스트(Collections.emptyList)로 변환
+        // (명세서: "chains가 미지정 또는 빈 배열이면 기본 지원 체인 전체를 조회한다")
         List<String> chains = new ArrayList<>();
         if (chain != null && !"auto".equalsIgnoreCase(chain)) {
             chains.add(chain);
