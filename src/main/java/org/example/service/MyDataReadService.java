@@ -35,7 +35,7 @@ public class MyDataReadService {
 
         // 합산용 배열 (람다 내부 사용을 위해 배열 처리)
         BigDecimal[] totalKrw = {BigDecimal.ZERO};
-        // --- 1. [하드코딩] 은행 데이터 ---
+       /* // --- 1. [하드코딩] 은행 데이터 ---
         List<MyDataPortfolioDto.BankDto> bankList = new ArrayList<>();
         List<MyDataPortfolioDto.BankDto> bankIrpList = new ArrayList<>();
 
@@ -62,10 +62,10 @@ public class MyDataReadService {
         investIrpList.add(MyDataPortfolioDto.InvestDto.builder()
                 .companyName("키움증권").accountNum("929-17-223112").accountName("키움 개인형 IRP 계좌")
                 .totalEvalAmt("25000000").withdrawableAmt("0").build());
-        totalKrw[0] = totalKrw[0].add(new BigDecimal("25000000"));
+        totalKrw[0] = totalKrw[0].add(new BigDecimal("25000000"));*/
 
         // 이 아래 코드가 실제 코드이며 위의 금융 자산 코드는 임시 코드로 삭제 예정
-        /*// --- 1. 은행 데이터 ---
+        // --- 1. 은행 데이터 ---
         List<MyDataPortfolioDto.BankDto> bankList = new ArrayList<>();
         List<MyDataPortfolioDto.BankDto> bankIrpList = new ArrayList<>();
 
@@ -113,7 +113,7 @@ public class MyDataReadService {
                             .totalEvalAmt(e.getEvalAmt().toString())
                             .withdrawableAmt("0")
                             .build();
-                }).collect(Collectors.toList());*/
+                }).collect(Collectors.toList());
 
         // --- 3. 가상자산 합산 로직 (멀티 지갑 대응) ---
         List<MyDataPortfolioDto.CryptoDto> cryptoList = new ArrayList<>();
@@ -148,7 +148,7 @@ public class MyDataReadService {
             }
         }
 
-        // --- 4. [하드코딩] 카드 & 보험 ---
+        /*// --- 4. [하드코딩] 카드 & 보험 ---
         List<MyDataPortfolioDto.CardDto> cardList = new ArrayList<>();
         cardList.add(MyDataPortfolioDto.CardDto.builder()
                 .cardCompanyName("현대카드").cardName("현대카드 ZERO").cardNum("2342-****-****-5621")
@@ -156,10 +156,10 @@ public class MyDataReadService {
 
         List<MyDataPortfolioDto.InsuDto> insuList = new ArrayList<>();
         insuList.add(MyDataPortfolioDto.InsuDto.builder()
-                .companyName("삼성화재").prodName("삼성화재 실손보험").paidAmt("50000000").build());
+                .companyName("삼성화재").prodName("삼성화재 실손보험").paidAmt("50000000").build());*/
 
         // 위의 코드도 임시용
-        /*// --- 4. 카드 & 보험 ---
+        // --- 4. 카드 & 보험 ---
         List<MyDataPortfolioDto.CardDto> cardList = cardRepository.findByUserId(userId).stream()
                 .map(e -> MyDataPortfolioDto.CardDto.builder()
                         .cardCompanyName(e.getCardCompanyName() != null ? e.getCardCompanyName() : "정보없음")
@@ -175,7 +175,7 @@ public class MyDataReadService {
                         .prodName(e.getProdName())
                         .paidAmt(e.getPaidAmt() != null ? e.getPaidAmt().toString() : "0")
                         .build())
-                .collect(Collectors.toList());*/
+                .collect(Collectors.toList());
 
         return MyDataPortfolioDto.builder()
                 .bankList(bankList)

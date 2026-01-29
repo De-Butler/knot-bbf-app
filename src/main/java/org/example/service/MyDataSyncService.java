@@ -22,7 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MyDataSyncService {
 
-//    private final MyDataMockAdapter adapter;
+    private final MyDataMockAdapter adapter;
     private final UserRepository userRepository;
     private final MyDataBankRepository bankRepository;
     private final MyDataCardRepository cardRepository;
@@ -48,7 +48,6 @@ public class MyDataSyncService {
 
         log.info(">>> 자산 동기화 시작: {}", username);
 
-/*
         // 2. Card Sync (이 부분이 핵심입니다)
         // --- Card Sync Section ---
         try {
@@ -194,7 +193,7 @@ public class MyDataSyncService {
             }
         } catch (Exception e) {
             log.error("Insu Sync Fail", e);
-        }*/
+        }
 
 
         // ---------------------------------------------------------------------
