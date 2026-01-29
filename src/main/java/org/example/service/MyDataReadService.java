@@ -33,38 +33,9 @@ public class MyDataReadService {
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
         Long userId = user.getId();
 
-        // 합산용 배열 (람다 내부 사용을 위해 배열 처리)
+        // 합산용 배열 (람다 내부 사용)
         BigDecimal[] totalKrw = {BigDecimal.ZERO};
-       /* // --- 1. [하드코딩] 은행 데이터 ---
-        List<MyDataPortfolioDto.BankDto> bankList = new ArrayList<>();
-        List<MyDataPortfolioDto.BankDto> bankIrpList = new ArrayList<>();
 
-        bankList.add(MyDataPortfolioDto.BankDto.builder()
-                .bankName("우리은행").accountNum("1002-123-423123").prodName("입출금통장")
-                .accountType("1001").balanceAmt("1500000").lastTranDate("20260125").build());
-        totalKrw[0] = totalKrw[0].add(new BigDecimal("1500000"));
-
-        bankIrpList.add(MyDataPortfolioDto.BankDto.builder()
-                .bankName("우리은행").accountNum("428-833-7777").prodName("KB 개인형 IRP")
-                .accountType("IRP").balanceAmt("12000000").lastTranDate("20220101").build());
-        totalKrw[0] = totalKrw[0].add(new BigDecimal("12000000"));
-
-
-        // --- 2. [하드코딩] 증권 데이터 ---
-        List<MyDataPortfolioDto.InvestDto> investList = new ArrayList<>();
-        List<MyDataPortfolioDto.InvestDto> investIrpList = new ArrayList<>();
-
-        investList.add(MyDataPortfolioDto.InvestDto.builder()
-                .companyName("키움증권").accountNum("555-88-231256").accountName("키움 종합매매")
-                .totalEvalAmt("15600000").withdrawableAmt("500000").build());
-        totalKrw[0] = totalKrw[0].add(new BigDecimal("15600000"));
-
-        investIrpList.add(MyDataPortfolioDto.InvestDto.builder()
-                .companyName("키움증권").accountNum("929-17-223112").accountName("키움 개인형 IRP 계좌")
-                .totalEvalAmt("25000000").withdrawableAmt("0").build());
-        totalKrw[0] = totalKrw[0].add(new BigDecimal("25000000"));*/
-
-        // 이 아래 코드가 실제 코드이며 위의 금융 자산 코드는 임시 코드로 삭제 예정
         // --- 1. 은행 데이터 ---
         List<MyDataPortfolioDto.BankDto> bankList = new ArrayList<>();
         List<MyDataPortfolioDto.BankDto> bankIrpList = new ArrayList<>();
@@ -82,6 +53,7 @@ public class MyDataReadService {
                     .lastTranDate(e.getLastTranDate())
                     .build();
 
+            // 대출 계좌는 자산 합산에서 제외 (선택 사항)
             if (e.getBalanceAmt() != null && !upperPName.contains("대출") && !upperPName.contains("론")) {
                 totalKrw[0] = totalKrw[0].add(e.getBalanceAmt());
             }
@@ -94,31 +66,34 @@ public class MyDataReadService {
         List<MyDataPortfolioDto.InvestDto> investList = investRepository.findByUserId(userId).stream()
                 .map(e -> {
                     if (e.getTotalEvalAmt() != null) totalKrw[0] = totalKrw[0].add(e.getTotalEvalAmt());
+
+                    // [수정] Null 안전 처리 추가
                     return MyDataPortfolioDto.InvestDto.builder()
                             .companyName(e.getCompanyName())
                             .accountNum(e.getAccountNum())
                             .accountName(e.getProdName())
-                            .totalEvalAmt(e.getTotalEvalAmt().toString())
-                            .withdrawableAmt(e.getWithdrawableAmt().toString())
+                            .totalEvalAmt(e.getTotalEvalAmt() != null ? e.getTotalEvalAmt().toString() : "0")
+                            .withdrawableAmt(e.getWithdrawableAmt() != null ? e.getWithdrawableAmt().toString() : "0")
                             .build();
                 }).collect(Collectors.toList());
 
         List<MyDataPortfolioDto.InvestDto> investIrpList = investIrpRepository.findByUserId(userId).stream()
                 .map(e -> {
                     if (e.getEvalAmt() != null) totalKrw[0] = totalKrw[0].add(e.getEvalAmt());
+
+                    // [수정] Null 안전 처리 추가
                     return MyDataPortfolioDto.InvestDto.builder()
                             .companyName(e.getCompanyName())
                             .accountNum(e.getAccountNum())
                             .accountName(e.getProdName())
-                            .totalEvalAmt(e.getEvalAmt().toString())
+                            .totalEvalAmt(e.getEvalAmt() != null ? e.getEvalAmt().toString() : "0")
                             .withdrawableAmt("0")
                             .build();
                 }).collect(Collectors.toList());
 
-        // --- 3. 가상자산 합산 로직 (멀티 지갑 대응) ---
+        // --- 3. 가상자산 합산 로직 ---
         List<MyDataPortfolioDto.CryptoDto> cryptoList = new ArrayList<>();
         BigDecimal[] cryptoTotalUsd = {BigDecimal.ZERO};
-
 
         List<CryptoWallet> wallets = cryptoWalletRepository.findByUser(user);
 
@@ -134,7 +109,7 @@ public class MyDataReadService {
                 }
 
                 // 개별 코인 리스트 변환 및 추가
-                if (wallet.getAssets() != null) {
+                if (wallet.getAssets() != null) { // Lazy Loading 작동 (@Transactional 존재)
                     for (org.example.domain.CryptoAsset asset : wallet.getAssets()) {
                         cryptoList.add(MyDataPortfolioDto.CryptoDto.builder()
                                 .symbol(asset.getSymbol())
@@ -148,17 +123,6 @@ public class MyDataReadService {
             }
         }
 
-        /*// --- 4. [하드코딩] 카드 & 보험 ---
-        List<MyDataPortfolioDto.CardDto> cardList = new ArrayList<>();
-        cardList.add(MyDataPortfolioDto.CardDto.builder()
-                .cardCompanyName("현대카드").cardName("현대카드 ZERO").cardNum("2342-****-****-5621")
-                .paymentAmt("450000").build());
-
-        List<MyDataPortfolioDto.InsuDto> insuList = new ArrayList<>();
-        insuList.add(MyDataPortfolioDto.InsuDto.builder()
-                .companyName("삼성화재").prodName("삼성화재 실손보험").paidAmt("50000000").build());*/
-
-        // 위의 코드도 임시용
         // --- 4. 카드 & 보험 ---
         List<MyDataPortfolioDto.CardDto> cardList = cardRepository.findByUserId(userId).stream()
                 .map(e -> MyDataPortfolioDto.CardDto.builder()

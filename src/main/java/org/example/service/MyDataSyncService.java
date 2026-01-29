@@ -10,11 +10,9 @@ import org.example.domain.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Collections;
 import java.util.Map;
 
 @Slf4j
@@ -24,11 +22,15 @@ public class MyDataSyncService {
 
     private final MyDataMockAdapter adapter;
     private final UserRepository userRepository;
+
+    // 금융자산 리포지토리
     private final MyDataBankRepository bankRepository;
     private final MyDataCardRepository cardRepository;
     private final MyDataInvestRepository investRepository;
     private final MyDataInsuranceRepository insuranceRepository;
     private final MyDataInvestIrpRepository investIrpRepository;
+
+    // 가상자산 서비스 & 리포지토리
     private final BlockchainService blockchainService;
     private final CryptoWalletRepository cryptoWalletRepository;
 
@@ -38,37 +40,24 @@ public class MyDataSyncService {
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
         Long userId = user.getId();
 
-        // 1. 기존 데이터 삭제
+        log.info(">>> [SYNC] 자산 동기화 시작: {}", username);
+
+        // 1. 기존 금융 데이터 삭제 (초기화)
         bankRepository.deleteByUserId(userId);
         cardRepository.deleteByUserId(userId);
         investRepository.deleteByUserId(userId);
         investIrpRepository.deleteByUserId(userId);
         insuranceRepository.deleteByUserId(userId);
 
+        // ---------------------------------------------------------------------
+        // 2. 금융자산 연동 (Mock API) - 안전장치 강화
+        // ---------------------------------------------------------------------
 
-        log.info(">>> 자산 동기화 시작: {}", username);
-
-        // 2. Card Sync (이 부분이 핵심입니다)
-        // --- Card Sync Section ---
+        // (1) Card Sync
         try {
             CardResponse res = adapter.getCards(mockToken, userSearchId);
-
             if (res != null && res.getResultList() != null) {
-                log.info(">>> [CARD DEBUG] Received count: {}", res.getResultList().size());
-
                 for (CardDto dto : res.getResultList()) {
-                    // [에러 방지] paymentAmt 숫자 변환 안전 처리
-                    String rawAmt = dto.getPaymentAmt();
-                    BigDecimal safeAmt = BigDecimal.ZERO;
-                    try {
-                        if (rawAmt != null && !rawAmt.isEmpty()) {
-                            // 혹시 모를 콤마(,) 제거 후 변환
-                            safeAmt = new BigDecimal(rawAmt.replace(",", ""));
-                        }
-                    } catch (Exception e) {
-                        log.error(">>> [CARD DEBUG] Amount parsing error for value: {}", rawAmt);
-                    }
-
                     cardRepository.save(MyDataCard.builder()
                             .userId(userId)
                             .cardId(dto.getCardId())
@@ -76,20 +65,18 @@ public class MyDataSyncService {
                             .cardName(dto.getCardName())
                             .cardType(dto.getCardType())
                             .cardMember(dto.getCardMember())
-                            .paymentAmt(safeAmt) // 안전하게 변환된 값 사용
+                            .paymentAmt(parseAmount(dto.getPaymentAmt())) // 안전 변환 메서드 사용
                             .cardCompanyName(dto.getCardCompanyName() != null ? dto.getCardCompanyName() : "현대카드")
                             .issueDate(dto.getIssueDate())
                             .build());
                 }
-                log.info(">>> [CARD DEBUG] Save Success");
-            } else {
-                log.warn(">>> [CARD DEBUG] Response is NULL or List is Empty");
+                log.info(">>> [금융] 카드 동기화 완료");
             }
         } catch (Exception e) {
-            // [중요] 에러 메시지를 영어로 출력해서 깨짐 방지
-            log.error(">>> [CARD DEBUG] CRITICAL ERROR: {}", e.toString());
+            log.error(">>> [금융] 카드 연동 실패 (무시하고 진행): {}", e.toString());
         }
-        // 2. Bank Sync (일반 계좌)
+
+        // (2) Bank Sync (입출금)
         try {
             BankAcctResponse res = adapter.getBankAccounts(mockToken, userSearchId);
             if (res != null && res.getAccountList() != null) {
@@ -100,16 +87,17 @@ public class MyDataSyncService {
                             .accountNum(dto.getAccountNum())
                             .prodName(dto.getProdName())
                             .accountType(dto.getAccountType())
-                            .balanceAmt(new BigDecimal(dto.getBalanceAmt()))
+                            .balanceAmt(parseAmount(dto.getBalanceAmt())) // 안전 변환
                             .lastTranDate(dto.getLastTranDate())
                             .build());
                 }
+                log.info(">>> [금융] 은행 동기화 완료");
             }
         } catch (Exception e) {
-            log.error("Bank Sync Fail", e);
+            log.error(">>> [금융] 은행 연동 실패: {}", e.toString());
         }
 
-        // [추가] 3. Bank IRP Sync (은행 IRP)
+        // (3) Bank IRP Sync
         try {
             BankIrpResponse res = adapter.getBankIrps(mockToken, userSearchId);
             if (res != null && res.getIrpList() != null) {
@@ -118,64 +106,65 @@ public class MyDataSyncService {
                             .userId(userId)
                             .bankName(dto.getBankName())
                             .accountNum(dto.getAccountNum())
-                            .prodName(dto.getProdName()) // 명세서의 "KB 개인형 IRP" 등 저장
-                            .accountType("IRP") // IRP 구분을 위해 명시적으로 지정
-                            .balanceAmt(new BigDecimal(dto.getEvalAmt()))
+                            .prodName(dto.getProdName())
+                            .accountType("IRP")
+                            .balanceAmt(parseAmount(dto.getEvalAmt())) // 안전 변환
                             .lastTranDate(dto.getOpenDate())
                             .build());
                 }
+                log.info(">>> [금융] 은행 IRP 동기화 완료");
             }
         } catch (Exception e) {
-            log.error("Bank IRP Sync Fail", e);
+            log.error(">>> [금융] 은행 IRP 연동 실패: {}", e.toString());
         }
 
-
-        // 4. Invest Sync (일반 증권)
+        // (4) Invest Sync (증권)
         try {
             InvestAcctResponse res = adapter.getInvestAccounts(mockToken, userSearchId);
             if (res != null && res.getAccountList() != null) {
                 for (InvestAccountDto dto : res.getAccountList()) {
                     investRepository.save(MyDataInvest.builder()
                             .userId(userId)
-                            .companyName(dto.getCompanyName()) // 키움증권
+                            .companyName(dto.getCompanyName())
                             .accountNum(dto.getAccountNum())
                             .prodName(dto.getAccountName())
-                            .totalEvalAmt(new BigDecimal(dto.getEvalAmt()))
-                            .withdrawableAmt(new BigDecimal(dto.getWithdrawableAmt()))
+                            .totalEvalAmt(parseAmount(dto.getEvalAmt())) // 안전 변환
+                            .withdrawableAmt(parseAmount(dto.getWithdrawableAmt()))
                             .issueDate(dto.getIssueDate())
                             .build());
                 }
+                log.info(">>> [금융] 증권 동기화 완료");
             }
         } catch (Exception e) {
-            log.error("Invest Sync Fail", e);
+            log.error(">>> [금융] 증권 연동 실패: {}", e.toString());
         }
 
-        // 5. Invest IRP Sync 부분
+        // (5) Invest IRP Sync
         try {
             InvestIrpResponse res = adapter.getInvestIrps(mockToken, userSearchId);
             if (res != null && res.getIrpList() != null) {
                 for (InvestIrpDto dto : res.getIrpList()) {
                     investIrpRepository.save(MyDataInvestIrp.builder()
                             .userId(userId)
-                            .companyName(dto.getCompanyName()) // 이제 명시적으로 호출 가능!
+                            .companyName(dto.getCompanyName())
                             .accountNum(dto.getAccountNum())
                             .isConsent(dto.isConsent())
                             .prodName(dto.getProdName())
                             .irpType(dto.getIrpType())
-                            .evalAmt(new BigDecimal(dto.getEvalAmt()))
-                            .invPrincipal(new BigDecimal(dto.getInvPrincipal()))
+                            .evalAmt(parseAmount(dto.getEvalAmt()))
+                            .invPrincipal(parseAmount(dto.getInvPrincipal()))
                             .openDate(dto.getOpenDate())
                             .expDate(dto.getExpDate())
                             .currencyCode(dto.getCurrencyCode())
                             .build());
                 }
+                log.info(">>> [금융] 증권 IRP 동기화 완료");
             }
         } catch (Exception e) {
-            log.error("Invest IRP Sync Fail: {}", e.getMessage());
+            log.error(">>> [금융] 증권 IRP 연동 실패: {}", e.getMessage());
         }
 
-
-        // 5. Insurance Sync
+        // (6) Insurance Sync
         try {
             InsuResponse res = adapter.getInsuContracts(mockToken, userSearchId);
             if (res != null && res.getInsuList() != null) {
@@ -185,19 +174,20 @@ public class MyDataSyncService {
                             .companyName(dto.getCompanyName())
                             .prodName(dto.getProdName())
                             .insuStatus(dto.getInsuStatus())
-                            .paidAmt(new BigDecimal(dto.getFaceAmt()))
+                            .paidAmt(parseAmount(dto.getFaceAmt())) // 안전 변환
                             .expDate(dto.getExpDate())
                             .insuNum(dto.getInsuNum())
                             .build());
                 }
+                log.info(">>> [금융] 보험 동기화 완료");
             }
         } catch (Exception e) {
-            log.error("Insu Sync Fail", e);
+            log.error(">>> [금융] 보험 연동 실패: {}", e.toString());
         }
 
 
         // ---------------------------------------------------------------------
-        // 8. 가상자산 (Crypto) Sync - [여기를 완전히 기초적인 문법으로 변경]
+        // 3. 가상자산 (Crypto) Sync - [실제 Blockchain API 호출]
         // ---------------------------------------------------------------------
         if (cryptoAddresses != null && !cryptoAddresses.isEmpty()) {
             log.info(">>> [CRYPTO] 가상자산 멀티체인 동기화 시작 (총 {}개)", cryptoAddresses.size());
@@ -207,21 +197,20 @@ public class MyDataSyncService {
                     try {
                         log.info(">>> [CRYPTO] 요청 Key: {}, Address: {}", key, address);
 
-                        // [수정] ArrayList<String>을 명시적으로 선언하고 생성합니다.
-                        List<String> targetChains = new ArrayList<String>();
+                        List<String> targetChains = new ArrayList<>();
 
                         if (key == null || key.equalsIgnoreCase("auto")) {
-                            // auto인 경우 빈 리스트 그대로 둠 -> 전체 스캔
                             log.info(">>> [CRYPTO] 자동 스캔 모드 진입");
                         } else {
-                            // 특정 체인인 경우 리스트에 추가
                             targetChains.add(key.toLowerCase());
                         }
 
-                        // 기존 데이터 삭제 및 블록체인 서비스 호출
+                        // [중요] 기존 데이터 삭제 후 서비스 호출
+                        // (BlockchainService 내부에서도 트랜잭션 처리가 되지만, 확실한 갱신을 위해 유지)
                         cryptoWalletRepository.deleteByAddressAndUser(address, user);
                         cryptoWalletRepository.flush();
 
+                        // BlockchainService 호출 -> 실제 API 조회 -> DB 저장
                         blockchainService.refreshWallet(user, address, targetChains);
 
                         log.info(">>> [CRYPTO] {} 동기화 성공", address);
@@ -232,5 +221,19 @@ public class MyDataSyncService {
                 }
             });
         }
+    }
+
+    // --- Helper Method: 숫자 변환 안전장치 ---
+    private BigDecimal parseAmount(String amount) {
+        try {
+            if (amount != null && !amount.isEmpty()) {
+                // 콤마 제거 후 변환
+                return new BigDecimal(amount.replace(",", ""));
+            }
+        } catch (Exception e) {
+            // 변환 실패 시 0 반환 (에러로 멈추는 것보다 0원이 나음)
+            return BigDecimal.ZERO;
+        }
+        return BigDecimal.ZERO;
     }
 }
