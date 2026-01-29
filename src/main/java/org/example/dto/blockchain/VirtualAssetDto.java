@@ -1,6 +1,6 @@
 package org.example.dto.blockchain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias; // 💡 여기가 변경됨
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,34 +11,33 @@ import lombok.NoArgsConstructor;
 public class VirtualAssetDto {
 
     private String chain;       // eth, btc 등
-
-    @JsonProperty("asset_type")
-    private String assetType;   // native, erc20 등
-
-    @JsonProperty("asset_id")
-    private String assetId;
-
     private String symbol;      // ETH, BTC
-
     private int decimals;
-
-    @JsonProperty("balance_raw")
-    private String balanceRaw;  // 블록체인은 숫자가 커서 String 권장
-
     private double balance;
 
-    @JsonProperty("price_usd")
+    // 👇 여기부터 JsonAlias 적용
+
+    @JsonAlias("asset_type")
+    private String assetType;   // native, erc20 등
+
+    @JsonAlias("asset_id")
+    private String assetId;
+
+    @JsonAlias("balance_raw")
+    private String balanceRaw;
+
+    @JsonAlias("price_usd")
     private double priceUsd;
 
-    @JsonProperty("price_krw")
+    @JsonAlias("price_krw")
     private double priceKrw;
 
-    @JsonProperty("value_usd")
+    @JsonAlias("value_usd")
     private double valueUsd;
 
-    @JsonProperty("value_krw")
-    private double valueKrw;
+    @JsonAlias("value_krw")
+    private double valueKrw;    // 🌟 중요: 이제 프론트에서 valueKrw로 받음!
 
-    @JsonProperty("prices_ts")
+    @JsonAlias("prices_ts")
     private String pricesTs;
 }

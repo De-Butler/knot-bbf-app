@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="96d145e5-9b4b-44bd-89d8-583b815d7772" name="변경" comment="" />
+    <list default="true" id="96d145e5-9b4b-44bd-89d8-583b815d7772" name="변경" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/blockchain/VirtualAssetDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/blockchain/VirtualAssetDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/dto/blockchain/VirtualTokenResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/dto/blockchain/VirtualTokenResponse.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

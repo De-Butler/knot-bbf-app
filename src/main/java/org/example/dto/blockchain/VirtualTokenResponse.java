@@ -1,6 +1,6 @@
 package org.example.dto.blockchain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias; // 💡 여기가 변경됨 (JsonProperty -> JsonAlias)
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,22 +12,19 @@ import java.util.List;
 public class VirtualTokenResponse {
 
     private String address;
-
     private List<String> chains;
 
-    @JsonProperty("asset_count")
+    // 📥 입력: "asset_count" (외부 API)
+    // 📤 출력: "assetCount" (프론트엔드 - 카멜케이스)
+    @JsonAlias("asset_count")
     private int assetCount;
-    // 12
 
-
-
-    @JsonProperty("total_value_usd")
+    @JsonAlias("total_value_usd")
     private double totalValueUsd;
 
-    @JsonProperty("total_value_krw")
+    @JsonAlias("total_value_krw")
     private double totalValueKrw;
 
-    // 리스트 이름표 붙이기 필수!
-    @JsonProperty("assets")
+    // 리스트 변수명도 "assets" 그대로 사용 (자동 매핑)
     private List<VirtualAssetDto> assets;
 }
