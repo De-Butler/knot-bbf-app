@@ -9,7 +9,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 public class RestTemplateConfig {
     @Bean
     public RestTemplate restTemplate() {
-        // 타임아웃 설정 (Java 8 스타일)
+        // 타임아웃 설정
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000); // 연결 5초 대기
         factory.setReadTimeout(5000);    // 데이터 읽기 5초 대기
